@@ -34,8 +34,8 @@ class Player():
         if self.control:
             self.get_keyboard_input(mode, events)
 
-        # AI control
         else:
+        # AI control
             agent_position = [camera + self.pos[0], self.pos[1]]
             self.direction = self.think(mode, box_lists, agent_position, self.v)
 
@@ -107,7 +107,41 @@ class Player():
         # velocity example: 7
 
         direction = -1
+        width = CONFIG["WIDTH"]
+        height = CONFIG["HEIGHT"]
+        velocity_max = 7
+        input_nn = np.zeros((5 ,1))
+        # set the velocity normilization
+        input_nn[4] = velocity / velocity_max
+        
+        # distance x of the first box and helicopter
+        input_nn[0] = 1
+        if(len(box_lists) > 0):
+            input_nn[0] = (box_lists[0].x - agent_position[0])/width
+
+        # distance gap of the first box and helicopter
+        input_nn[2] = 0
+        if(len(box_lists) > 1):
+            input_nn[2] = (agent_position[1] - box_lists[0].gap_mid)/height
+
+        # distance x of the second box and helicopter
+        input_nn[1] = 1
+        if(len(box_lists) > 1):
+            input_nn[1] = (box_lists[1].x - agent_position[0])/width
+
+        # distance gap of the second box and helicopter
+        input_nn[3] = 0
+        if(len(box_lists) > 0):
+            input_nn[3] = (agent_position[1] - box_lists[1].gap_mid)/height
+        
+        check = self.nn.forward(input_nn)
+        
+        if(mode == "helicopter"):
+            if check[0][0] > 1:
+                direction = 1
+        
         return direction
+
 
     def collision_detection(self, mode, box_lists, camera):
         if mode == 'helicopter':
@@ -131,3 +165,4 @@ class Player():
                     is_collided = True
 
         return is_collided
+    
